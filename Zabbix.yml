@@ -1,0 +1,53 @@
+---
+- name: Install Zabbix on Ubuntu 20.04
+  hosts: all
+  become: true
+
+  tasks:
+  - name: Add the Zabbix repository
+    apt_repository:
+      repo: 'deb http://repo.zabbix.com/zabbix/6.0/ubuntu focal main'
+      state: present
+      update_cache: true
+
+  - name: Install Zabbix server and frontend
+    apt:
+      name:
+        - zabbix-server-mysql
+        - zabbix-frontend-php
+        - zabbix-agent
+      state: present
+      update_cache: true
+   
+  - name: Create a database for Zabbix
+    mysql_db:
+      name: zabbix
+      state: present
+      collation: utf8mb4_general_ci
+      encoding: utf8mb4
+      login_user: root
+      login_password: "{{ mysql_root_password }}"
+ 
+  - name: Import the initial schema and data
+    command: zcat /usr/share/doc/zabbix-server-mysql/create.sql.gz | mysql -uzabbix -pzabbix zabbix
+   
+  - name: Configuring PHP-FPM 
+    template:
+      src: zabbix.conf.j2
+      dest: /etc/zabbix/web/zabbix.conf
+   
+  - name: Configuring Apache web server 
+    template:
+      src: zabbix.conf.j2
+      dest: /etc/apache2/conf-enabled/zabbix.conf
+      notify:
+      - restart apache2
+      
+  - name: Start and enable Zabbix services
+    service:
+      name:
+        - zabbix-server
+        - zabbix-agent
+        - apache2
+      state: started
+      enabled: true
