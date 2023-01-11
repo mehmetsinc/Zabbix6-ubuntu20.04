@@ -20,7 +20,6 @@ Usage
 2.  Edit the `zabbix.conf.j2` file with your specific configurations.
 3.  Run the playbook with the command:
 
-Copy code
 
 `ansible-playbook -i <inventory-file> --extra-vars "mysql_root_password=<root_password>" zabbix-install.yml`
 
